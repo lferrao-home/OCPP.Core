@@ -186,8 +186,20 @@
   <data name="Title" xml:space="preserve">
     <value>Management</value>
   </data>
+  <data name="TitleChangeConfiguration" xml:space="preserve">
+    <value>Change Configuration</value>
+  </data>
+  <data name="TitleGetConfiguration" xml:space="preserve">
+    <value>Get Configuration</value>
+  </data>
   <data name="TitleReset" xml:space="preserve">
     <value>Restart</value>
+  </data>
+  <data name="TitleStart" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="TitleStop" xml:space="preserve">
+    <value>Stop</value>
   </data>
   <data name="TitleUnlockConnector" xml:space="preserve">
     <value>Unlock</value>

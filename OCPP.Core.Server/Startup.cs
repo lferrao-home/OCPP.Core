@@ -76,7 +76,9 @@ namespace OCPP.Core.Server
             // Set WebSocketsOptions
             var webSocketOptions = new WebSocketOptions() 
             {
-                ReceiveBufferSize = 8 * 1024
+                ReceiveBufferSize = 8 * 1024,
+                KeepAliveInterval = TimeSpan.FromSeconds(20)
+
             };
 
             // Accept WebSocket

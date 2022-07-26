@@ -148,6 +148,18 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-2">
+                        <button type="button" class="btn btn-info" id="btnStart" title="@Localizer["TitleStart"]" onclick="StartChargepoint()"><i class="fas fa-redo"></i> @Localizer["TitleStart"]</button>
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="button" class="btn btn-info" id="btnStop" title="@Localizer["TitleStop"]" onclick="StopChargepoint()"><i class="fas fa-redo"></i> @Localizer["TitleStop"]</button>
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="button" class="btn btn-info" id="btnGetConfiguration" title="@Localizer["TitleGetConfiguration"]" onclick="GetConfiguration()"><i class="fas fa-redo"></i> @Localizer["TitleGetConfiguration"]</button>
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="button" class="btn btn-info" id="btnChangeConfiguration" title="@Localizer["TitleChangeConfiguration"]" onclick="ChangeConfiguration()"><i class="fas fa-redo"></i> @Localizer["TitleChangeConfiguration"]</button>
+                    </div>
+                    <div class="col-sm-2">
                         <button type="button" class="btn btn-info" id="btnReset" title="@Localizer["TitleReset"]" onclick="ResetChargepoint()"><i class="fas fa-redo"></i> @Localizer["TitleReset"]</button>
                     </div>
                     <div class="col-sm-2">
@@ -162,7 +174,68 @@
     @section scripts {
         @if (!string.IsNullOrWhiteSpace(Model.ChargePointId))
         {
-            <script>
+<script>
+            function StartChangepoint() {
+                ChargepointAction('Start','Start', 'Start {0}?', 'Starting charge station...', "@Html.Raw(Url.Content("~/API/Start/" + Uri.EscapeUriString(Model.ChargePointId)))");
+            }
+            function StopChangepoint() {
+                ChargepointAction('Stop','Stop', 'Stop {0}?', 'Stoping charge station...', "@Html.Raw(Url.Content("~/API/Stop/" + Uri.EscapeUriString(Model.ChargePointId)))");
+            }
+            function GetConfiguration() {
+                ChargepointAction('GetConfiguration','Get Configuration', 'Get {0} Configuration?', 'Getting configuration...', "@Html.Raw(Url.Content("~/API/GetConfiguration/" + Uri.EscapeUriString(Model.ChargePointId)))");
+            }
+            function ChangeConfiguration() {
+                ChargepointAction('ChangeConfiguration','Change Configuration', 'Change {0}?', 'Changing charge station...', "@Html.Raw(Url.Content("~/API/ChangeConfiguration/" + Uri.EscapeUriString(Model.ChargePointId)))");
+            }
+            function ChargepointAction(action, title, question, executeMessage, url) {
+                var dialog = new BootstrapDialog({
+                    title: title,
+                    message: question,
+                    spinicon: 'fa fa-spinner fa-fw',
+                    buttons: [{
+                        id: 'btnDialog'+action,
+                        label: title,
+                        icon: 'fas fa-redo',
+                        autospin: true,
+                        action: function (dialogRef) {
+                            dialogRef.enableButtons(false);
+                            dialogRef.setClosable(false);
+                            dialogRef.getModalBody().html(executeMessage);
+
+                            var xmlhttp = new XMLHttpRequest();
+                            xmlhttp.onreadystatechange = function () {
+                                if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                                    if (xmlhttp.status == 200) {
+                                        dialogRef.getModalBody().html(xmlhttp.responseText);
+                                    }
+                                    else {
+                                        dialogRef.getModalBody().html('Error: ' + xmlhttp.responseText);
+                                    }
+
+                                    dialogRef.setClosable(true);
+                                    dialogRef.enableButtons(true);
+                                    var $resetButton = dialog.getButton('btnDialog'+action);
+                                    $resetButton.hide();
+                                    var $cancelButton = dialog.getButton('btnDialogCancel');
+                                    $cancelButton.text('@Localizer["Close"]');
+
+                                }
+                            };
+                            xmlhttp.open("GET", url, true);
+                            xmlhttp.send();
+                        }
+                    }, {
+                        id: 'btnDialogCancel',
+                        label: '@Localizer["Cancel"]',
+                        action: function (dialogRef) {
+                            dialogRef.close();
+                        }
+                    }]
+                });
+                dialog.open();
+            }
+
+
             function ResetChargepoint() {
                 var dialog = new BootstrapDialog({
                     title: '@Localizer["TitleReset"]',
@@ -258,7 +331,7 @@
                 });
                 dialog.open();
             }
-            </script>
+</script>
         }
     }
 }

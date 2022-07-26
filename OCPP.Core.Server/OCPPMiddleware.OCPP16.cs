@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using OCPP.Core.Database;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -112,6 +113,135 @@ namespace OCPP.Core.Server
             ChargePointStatus dummy;
             _chargePointStatusDict.Remove(chargePointStatus.Id, out dummy);
         }
+
+
+        private async Task GetConfiguration16(ChargePointStatus chargePointStatus, HttpContext apiCallerContext) {
+            ILogger logger = _logFactory.CreateLogger("OCPPMiddleware.OCPP16");
+
+            var getConfigurationRequest = new Messages_OCPP16.GetConfigurationRequest();
+            getConfigurationRequest.Key = new string[] { };
+
+            string jsonRequest = JsonConvert.SerializeObject(getConfigurationRequest);
+
+            OCPPMessage msgOut = new OCPPMessage();
+            msgOut.MessageType = "2";
+            msgOut.Action = "GetConfiguration";
+            msgOut.UniqueId = Guid.NewGuid().ToString("N");
+            msgOut.JsonPayload = jsonRequest;
+            msgOut.TaskCompletionSource = new TaskCompletionSource<string>();
+
+            // store HttpContext with MsgId for later answer processing (=> send anwer to API caller)
+            _requestQueue.Add(msgOut.UniqueId, msgOut);
+
+            // Send OCPP message with optional logging/dump
+            await SendOcpp16Message(msgOut, logger, chargePointStatus.WebSocket);
+
+            // Wait for asynchronous chargepoint response and processing
+            string apiResult = await msgOut.TaskCompletionSource.Task;
+
+            // 
+            apiCallerContext.Response.StatusCode = 200;
+            apiCallerContext.Response.ContentType = "application/json";
+            await apiCallerContext.Response.WriteAsync(apiResult);
+        }
+
+
+        private async Task ChangeConfiguration16(ChargePointStatus chargePointStatus, HttpContext apiCallerContext, string key, string value) {
+            ILogger logger = _logFactory.CreateLogger("OCPPMiddleware.OCPP16");
+
+            var request = new Messages_OCPP16.ChangeConfigurationRequest();
+            request.Key = key;
+            request.Value = value;
+
+            string jsonRequest = JsonConvert.SerializeObject(request);
+
+            OCPPMessage msgOut = new OCPPMessage();
+            msgOut.MessageType = "2";
+            msgOut.Action = "ChangeConfiguration";
+            msgOut.UniqueId = Guid.NewGuid().ToString("N");
+            msgOut.JsonPayload = jsonRequest;
+            msgOut.TaskCompletionSource = new TaskCompletionSource<string>();
+
+            // store HttpContext with MsgId for later answer processing (=> send anwer to API caller)
+            _requestQueue.Add(msgOut.UniqueId, msgOut);
+
+            // Send OCPP message with optional logging/dump
+            await SendOcpp16Message(msgOut, logger, chargePointStatus.WebSocket);
+
+            // Wait for asynchronous chargepoint response and processing
+            string apiResult = await msgOut.TaskCompletionSource.Task;
+
+            // 
+            apiCallerContext.Response.StatusCode = 200;
+            apiCallerContext.Response.ContentType = "application/json";
+            await apiCallerContext.Response.WriteAsync(apiResult);
+        }
+
+
+        private async Task RemoteStartTransaction16(ChargePointStatus chargePointStatus, HttpContext apiCallerContext) {
+            ILogger logger = _logFactory.CreateLogger("OCPPMiddleware.OCPP16");
+            
+            var remoteStartRequest = new Messages_OCPP16.RemoteStartTransactionRequest();
+            using (OCPPCoreContext dbContext = new OCPPCoreContext(_configuration)) {
+                remoteStartRequest.IdTag = dbContext.ChargeTags.First().TagId;
+            }
+            remoteStartRequest.ConnectorId = chargePointStatus.OnlineConnectors.Keys.First();
+            string jsonRequest = JsonConvert.SerializeObject(remoteStartRequest);
+
+            OCPPMessage msgOut = new OCPPMessage();
+            msgOut.MessageType = "2";
+            msgOut.Action = "RemoteStartTransaction";
+            msgOut.UniqueId = Guid.NewGuid().ToString("N");
+            msgOut.JsonPayload = jsonRequest;
+            msgOut.TaskCompletionSource = new TaskCompletionSource<string>();
+
+            // store HttpContext with MsgId for later answer processing (=> send anwer to API caller)
+            _requestQueue.Add(msgOut.UniqueId, msgOut);
+
+            // Send OCPP message with optional logging/dump
+            await SendOcpp16Message(msgOut, logger, chargePointStatus.WebSocket);
+
+            // Wait for asynchronous chargepoint response and processing
+            string apiResult = await msgOut.TaskCompletionSource.Task;
+
+            // 
+            apiCallerContext.Response.StatusCode = 200;
+            apiCallerContext.Response.ContentType = "application/json";
+            await apiCallerContext.Response.WriteAsync(apiResult);
+        }
+
+
+
+        private async Task RemoteStopTransaction16(ChargePointStatus chargePointStatus, HttpContext apiCallerContext)
+        {
+            ILogger logger = _logFactory.CreateLogger("OCPPMiddleware.OCPP16");
+
+            var remoteStopRequest = new Messages_OCPP16.RemoteStopTransactionRequest();
+            remoteStopRequest.TransactionId = chargePointStatus.OnlineConnectors.First().Value.TransactionId;
+            string jsonRequest = JsonConvert.SerializeObject(remoteStopRequest);
+            
+            OCPPMessage msgOut = new OCPPMessage();
+            msgOut.MessageType = "2";
+            msgOut.Action = "RemoteStopTransaction";
+            msgOut.UniqueId = Guid.NewGuid().ToString("N");
+            msgOut.JsonPayload = jsonRequest;
+            msgOut.TaskCompletionSource = new TaskCompletionSource<string>();
+
+            // store HttpContext with MsgId for later answer processing (=> send anwer to API caller)
+            _requestQueue.Add(msgOut.UniqueId, msgOut);
+
+            // Send OCPP message with optional logging/dump
+            await SendOcpp16Message(msgOut, logger, chargePointStatus.WebSocket);
+
+            // Wait for asynchronous chargepoint response and processing
+            string apiResult = await msgOut.TaskCompletionSource.Task;
+
+            // 
+            apiCallerContext.Response.StatusCode = 200;
+            apiCallerContext.Response.ContentType = "application/json";
+            await apiCallerContext.Response.WriteAsync(apiResult);
+        }
+
 
         /// <summary>
         /// Waits for new OCPP V1.6 messages on the open websocket connection and delegates processing to a controller

@@ -34,6 +34,7 @@ namespace OCPP.Core.Server
         {
             string errorCode = null;
             StopTransactionResponse stopTransactionResponse = new StopTransactionResponse();
+            stopTransactionResponse.IdTagInfo = new IdTagInfo();
 
             try
             {
@@ -51,7 +52,7 @@ namespace OCPP.Core.Server
                 }
                 else
                 {
-                    stopTransactionResponse.IdTagInfo = new IdTagInfo();
+ 
                     stopTransactionResponse.IdTagInfo.ExpiryDate = MaxExpiryDate;
 
                     try
@@ -174,7 +175,7 @@ namespace OCPP.Core.Server
                             {
                                 Logger.LogError("StopTransaction => Unknown transaction: id={0} / chargepoint={1} / tag={2}", stopTransactionRequest.TransactionId, ChargePointStatus?.Id, idTag);
                                 WriteMessageLog(ChargePointStatus?.Id, transaction?.ConnectorId, msgIn.Action, string.Format("UnknownTransaction:ID={0}/Meter={1}", stopTransactionRequest.TransactionId, stopTransactionRequest.MeterStop), errorCode);
-                                errorCode = ErrorCodes.PropertyConstraintViolation;
+                                // errorCode = ErrorCodes.PropertyConstraintViolation;
                             }
                         }
                     }

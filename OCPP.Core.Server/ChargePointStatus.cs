@@ -110,6 +110,10 @@ namespace OCPP.Core.Server
         /// StateOfCharges in percent
         /// </summary>
         public double? SoC { get; set; }
+
+        public double? CurrentImport { get; set; }
+
+        public int TransactionId { get; set; }
     }
 
     public enum ConnectorStatusEnum

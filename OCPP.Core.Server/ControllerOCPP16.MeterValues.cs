@@ -79,6 +79,8 @@ namespace OCPP.Core.Server
                     double meterKWH = -1;
                     DateTimeOffset? meterTime = null;
                     double stateOfCharge = -1;
+                    double currentImport = -1;
+
                     foreach (MeterValue meterValue in meterValueRequest.MeterValue)
                     {
                         foreach (SampledValue sampleValue in meterValue.SampledValue)
@@ -159,6 +161,8 @@ namespace OCPP.Core.Server
                                 {
                                     Logger.LogError("MeterValues => invalid value '{0}' (SoC)", sampleValue.Value);
                                 }
+                            } else if (sampleValue.Measurand == SampledValueMeasurand.Current_Import) {
+                                double.TryParse(sampleValue.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out currentImport);
                             }
                         }
                     }
@@ -173,7 +177,12 @@ namespace OCPP.Core.Server
                             UpdateConnectorStatus(connectorId, null, null, meterKWH, meterTime);
                         }
 
-                        if (currentChargeKW >= 0 || meterKWH >= 0 || stateOfCharge >= 0)
+                        if (ChargePointStatus.OnlineConnectors.TryGetValue(connectorId, out var connectorStatus)) {
+                            connectorStatus.TransactionId = meterValueRequest.TransactionId;
+                        }
+
+
+                        if (currentChargeKW >= 0 || meterKWH >= 0 || stateOfCharge >= 0 || currentImport >= 0)
                         {
                             if (ChargePointStatus.OnlineConnectors.ContainsKey(connectorId))
                             {
@@ -181,6 +190,7 @@ namespace OCPP.Core.Server
                                 if (currentChargeKW >= 0) ocs.ChargeRateKW = currentChargeKW;
                                 if (meterKWH >= 0) ocs.MeterKWH = meterKWH;
                                 if (stateOfCharge >= 0) ocs.SoC = stateOfCharge;
+                                if (currentImport >= 0) ocs.CurrentImport = currentImport;
                             }
                             else
                             {
